@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+	<!-- 注解扫描 -->
+	<context:component-scan base-package="com" />
+	
+	<!-- 加载config.properties文件的bean -->
+	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<!-- property标签的name名是写死的，locations -->
+		<property name="locations">
+			<list>
+				<value>classpath:jdbc.properties</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 配置c3p0数据源的bean，配置在jdbc.properties -->
+	<bean id="dateSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${jdbc.mysql.driverClass}"></property>
+		<property name="jdbcUrl" value="${jdbc.mysql.jdbcUrl}" />
+		<property name="user" value="${jdbc.mysql.user}" />
+		<property name="password" value="${jdbc.mysql.password}" />
+		<!-- 创建数据库连接池之后初始化的数据库连接数，默认3 -->
+		<property name="initialPoolSize" value="${jdbc.mysql.initialPoolSize}"></property>
+		<!-- 连接池中可以存在的最大连接数，默认15 -->
+		<property name="maxPoolSize" value="${jdbc.mysql.maxPoolSize}"></property>
+		<!-- 当连接池中的连接用完的时候，c3p0一次性创建的新的连接数 -->
+		<property name="acquireIncrement" value="${jdbc.mysql.acquireIncrement}"></property>
+	</bean>
+	
+	<!-- 事务管理器，事务的操作由它来 -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dateSource"></property>
+	</bean>
+	
+	<!-- 事务的通知 -->
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<!-- 开发规范:
+				对于tx:method的配置，name属性
+					查询：方法名：selectXXX，getXXX，查询时都配置只读就好，默认不只读
+					新增：insertXXX，addXXX
+					修改：updateXXX，setXXX
+					删除：deleteXXX，removeXXX
+				 -->
+			<tx:method name="select*" read-only="true"/>
+			<tx:method name="get*" read-only="true"/>
+			<tx:method name="insert*" read-only="false"/>
+			<tx:method name="add*"/>
+			<tx:method name="update*"/>
+			<tx:method name="set*"/>
+			<tx:method name="delete*"/>
+			<tx:method name="del*"/>
+			<tx:method name="remove*"/>
+			<tx:method name="*"/>
+			<!-- spring的事务控制会按照配置的tx:method顺序进行匹配，在最后配置*，就是说当方法名都匹配不到tx:method,就是匹配* -->
+		</tx:attributes>
+	</tx:advice>
+	
+	<aop:config>
+		<!-- 根据三层架构项目开发规范：
+			由业务逻辑层来调用数据访问层，也就是service层调用dao层，业务逻辑调用接口xml映射器
+			根据开发规范，业务逻辑方法都在com.test.*.service包的*所有类中
+			业务逻辑层方法调用dao层(存放接口的类，xml映射器操作数据库)的方法
+			一般事务都是控制在业务逻辑层，默认一个业务逻辑的方法就是一个整体的事务
+			因为dao层都是单独的一个个增删改查的方法，不能称为事务
+			业务逻辑层一个方法可能调用dao层的几个方法(进行多个数据库操作)，所以事务控制在业务逻辑层
+			 -->
+		<aop:pointcut expression="execution( * com.mis.*.service.*.*(..))" id="txpt"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txpt"/>
+	</aop:config>
+	
+	<!-- spring整合mybatis的bean的配置 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 依赖注入配置好的数据源，那个数据源的属性是通过读取properties文件获取的 -->
+		<property name="dataSource" ref="dateSource"></property>
+		<!-- 设置自动扫描mapper.xml配置文件的路径，classpath路径后面的.要换成/
+			因为做项目时，包名有命名规范 -->
+		<property name="mapperLocations" value="classpath:com/mis/*/xml/*.xml"></property>
+		<!-- 设置mybatis配置文件的路径，都是放在根目录中的 -->
+		<property name="configLocation" value="classpath:myBatis-config.xml"></property>
+	</bean>
+	
+	<!-- 使用mybatis开发时，使用接口+xml映射器，不同的映射器所属的类不同，类属性配置也不同
+	因此需要设置自动给接口去做一个代理的实现类，自动的所以不需要id -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 根据三层架构项目开发命名规范，mybatis的接口放在数据访问层dao包下 -->
+		<!-- 扫描接口的类 -->
+		<property name="basePackage" value="com.mis.*.dao"></property>
+		<!-- 依赖注入sqlSession工厂 -->
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+	</bean>
+</beans>

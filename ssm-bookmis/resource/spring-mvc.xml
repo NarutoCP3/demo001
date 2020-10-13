@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/mvc
+	http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+	
+	<!-- 开启注解扫描 -->
+	<context:component-scan base-package="com"/>
+	<!-- 开启MVC注解模式 -->
+	<mvc:annotation-driven />
+	
+	<!--使用mvc:resources标签定义哪些是静态资源，不要被DispatcherServlet拦截 
+		拦截的时候放过静态资源(图片、css、js、html)，jsp本质是servlet，不是静态资源
+		location：当前静态资源的文件夹，例如/imgs/，第一个斜杠代表根路径，第二个斜杠代表imgs文件夹下所有文件
+		mapping，静态资源的访问路径(上下文之后的部分)，**代表imgs下的所有路径，路径就是链接，
+			例如：html/h1/h2/h3/3.html,写多少层路径都行，所以是**(多级路径)
+		可以配置多个
+		
+		也可以在web.xml中配置url-pattern为*.do，给action加后缀，本地静态资源就不会被拦截
+		就不需要配置静态资源，不建议
+	 -->
+	<mvc:resources location="/pages/" mapping="/pages/**"/>
+	<mvc:resources location="/pages/css/" mapping="/pages/css/**"/>
+	<mvc:resources location="/pages/img/" mapping="/pages/img/**"/>
+	
+	<!-- springMVC自定义视图解析器 ,因为网页都在pages文件夹里，使用的都是jsp页面
+		例如返回值是return "/pages/index.jsp";
+		自定义之后只需写 return "index";
+	-->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<!-- prefix前缀，返回值的前缀 -->
+		<property name="prefix" value="/pages/"></property>
+		<!-- suffix后缀，返回值的后缀 -->
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+	
+	<!-- 拦截所有请求，访问限制 -->
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<bean class="com.mis.base.CommonInterceptor"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+</beans>

@@ -1,0 +1,41 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace是接口映射器的全类名 -->
+<mapper namespace="com.mis.borrow.dao.BorrowMapper">
+	<resultMap type="Borrow" id="BorrowMap">
+		<id property="id" column="id"/>
+		<result property="bookId" column="role_code"/>
+		<result property="borrower" column="role_name"/>
+		<result property="borrowDate" column="role_name"/>
+	</resultMap>
+	
+	<select id="borrowBooks" resultType="Map">
+		select b.id,d.desc typeval,b.book_name bookName,b.author,b.publish_date publishDate,bb.id bbid,bb.borrower borrower,bb.borrow_date borrowDate from books b
+		LEFT JOIN dictionary d ON d.type = 'book_type' AND d.value = b.book_type
+		LEFT JOIN books_borrow bb ON bb.book_id = b.id
+		where b.book_type LIKE '%${bookType}%' AND b.book_name LIKE '%${bookName}%' AND b.author LIKE '%${author}%' ORDER BY b.id LIMIT #{pageNum},#{pageSize}
+	</select>
+	
+	<select id="selectCountByPages" parameterType="Book" resultType="Integer">
+		select count(id) from books where book_type LIKE '%${bookType}%' AND book_name LIKE '%${bookName}%' AND author LIKE '%${author}%'
+	</select>
+	
+	<insert id="insertBorrow" parameterType="Borrow">
+		INSERT INTO books_borrow (id,book_id,borrower,borrow_date) values (#{id},#{bookId},#{username},CURRENT_TIMESTAMP())
+	</insert>
+	
+	<select id="selectBorrowBooks" resultType="Map">
+	    SELECT b.id,d.desc typeval,b.book_name bookName,b.author,b.publish_date publishDate,u.real_name realName,bb.borrow_date borrowDate,bb.id bbid from books_borrow bb
+		LEFT JOIN books b on b.id = bb.book_id
+		LEFT JOIN dictionary d ON d.type = 'book_type' AND d.value = b.book_type
+		LEFT JOIN users u ON u.username = bb.borrower
+		where bb.borrower = #{username} ORDER BY b.id LIMIT #{pageNum},#{pageSize}
+	</select>
+	
+	<select id="selectCountOfBorrower" parameterType="String" resultType="Integer">
+		select count(id) from books_borrow where borrower = #{username}
+	</select>
+	
+	<delete id="returnBooks" parameterType="String">
+		delete from books_borrow where id = #{bbid}
+	</delete>
+</mapper>

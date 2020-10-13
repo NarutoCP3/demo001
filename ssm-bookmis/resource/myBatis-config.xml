@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<typeAliases>
+		<typeAlias type="com.mis.user.domain.Users" alias="User"/>
+		<typeAlias type="com.mis.book.domain.Books" alias="Book"/>
+		<typeAlias type="com.mis.borrow.domain.BooksBorrow" alias="Borrow"/>
+		<typeAlias type="com.mis.dictionary.domain.Dictionary" alias="Dictionary"/>
+		<typeAlias type="com.mis.user.domain.Role" alias="Role"/>
+	</typeAliases>
+
+</configuration>

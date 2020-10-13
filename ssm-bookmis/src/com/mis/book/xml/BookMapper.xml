@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace是接口映射器的全类名 -->
+<mapper namespace="com.mis.book.dao.BookMapper">
+	<resultMap type="Book" id="BookMap">
+		<!-- id标签对应主键，本例表的实体类Student类的id属性对应表的主键字段id -->
+		<id property="id" column="id"/>
+		<!-- 类的普通属性对应表的普通字段，使用result标签 -->
+		<result property="bookName" column="book_name"/>
+		<result property="bookType" column="book_type"/>
+		<result property="author" column="author"/>
+		<result property="publishDate" column="publish_date"/>
+		<result property="bookDesc" column="book_desc"/>
+	</resultMap>
+
+	<select id="selectBooks" resultType="Map">
+		select b.id,d.desc typeval,b.book_name bookName,b.author,b.publish_date publishDate from books b
+		LEFT JOIN dictionary d ON d.type = 'book_type' AND d.value = b.book_type
+		where b.book_type LIKE '%${bookType}%' AND b.book_name LIKE '%${bookName}%' AND b.author LIKE '%${author}%' ORDER BY b.id LIMIT #{pageNum},#{pageSize}
+	</select>
+	
+	<select id="selectCountByPages" resultType="Integer" parameterType="Book">
+		select count(id) from books where book_type LIKE '%${bookType}%' AND book_name LIKE '%${bookName}%' AND author LIKE '%${author}%'
+	</select>
+	
+	<insert id="insertBook" parameterType="Book">
+		INSERT INTO books (book_name,book_type,author,publish_date,book_desc) values (#{bookName},#{bookType},#{author},#{publishDate},#{bookDesc})
+	</insert>
+	
+	<select id="selectBookById" parameterType="Integer" resultMap="BookMap">
+		SELECT id,book_name,book_type,author,publish_date,book_desc from books where id = #{id}
+	</select>
+	
+	<update id="updateBookById" parameterType="Book">
+		update books set book_name = #{bookName},book_type = #{bookType},author = #{author},publish_date = #{publishDate},book_desc = #{bookDesc} where id = #{id}
+	</update>
+	
+	<delete id="deleteBookById" parameterType="Integer">
+		delete from books where id = #{id}
+	</delete>
+	
+	<select id="selectBookInfoById" parameterType="Integer" resultType="Map">
+		SELECT b.id,b.book_name bookName,d.desc typeval,b.author author,b.publish_date publishDate,b.book_desc bookDesc from books b
+		LEFT JOIN dictionary d on d.type = 'book_type' AND b.book_type = d.value
+		where b.id = #{id}
+	</select>
+</mapper>

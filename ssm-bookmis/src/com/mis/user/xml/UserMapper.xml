@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace是接口映射器的全类名 -->
+<mapper namespace="com.mis.user.dao.UserMapper">
+	<resultMap type="User" id="UserMap">
+		<!-- id标签对应主键，本例表的实体类Student类的id属性对应表的主键字段id -->
+		<id property="id" column="id"/>
+		<!-- 类的普通属性对应表的普通字段，使用result标签 -->
+		<result property="userName" column="username"/>
+		<result property="password" column="password"/>
+		<result property="realName" column="real_name"/>
+		<result property="sex" column="sex"/>
+		<result property="status" column="status"/>
+		<result property="grade" column="grade"/>
+		<result property="classes" column="class"/>
+	</resultMap>
+	
+	<resultMap type="Role" id="RoleMap">
+		<id property="id" column="id"/>
+		<result property="roleCode" column="role_code"/>
+		<result property="roleName" column="role_name"/>
+	</resultMap>
+
+	<!-- id是接口方法名，resultType是返回值类型(全类名不过基本数据类型mybatis自设了别名)，parameterType是接口方法的参数类型，在主配置文件手动设置的别名 -->
+	<select id="selectCountByUser" resultType="Integer" parameterType="User">
+		select count(id) from users where username = #{userName} and password = #{password}
+	</select>
+	
+	<!-- 接口方法中传递的参数都用@Param("")指定传递了，不需要parameterType -->
+	<select id="selectUsers" resultType="Map">
+		SELECT u.id,u.username,d1.desc statusval,u.real_name realName,d0.desc sexval,CONCAT(d2.desc,d3.desc) classes from users u 
+		LEFT JOIN dictionary d0 on d0.type = 'sex' and u.sex = d0.value 
+		LEFT JOIN dictionary d1 on d1.type = 'status' and u.status = d1.value 
+		LEFT JOIN dictionary d2 on d2.type = 'grade' and u.grade = d2.value 
+		LEFT JOIN dictionary d3 on d3.type = 'class' and u.class = d3.value 
+		where u.status like '%${status}%' and u.username like '%${userName}%' ORDER BY u.id LIMIT #{pageNum},#{pageSize}
+	</select>
+	
+	<select id="selectCountByPages" resultType="Integer" parameterType="User">
+		select count(id) from users where status like '%${status}%' and username like '%${userName}%'
+	</select>
+	
+	<insert id="insertUser" parameterType="User">
+		INSERT INTO users (username,password,real_name,sex,status,grade,class) VALUES (#{userName},#{password},#{realName},#{sex},#{status},#{grade},#{classes})
+	</insert>
+	
+	<select id="selectUserById" parameterType="Integer" resultMap="UserMap">
+		select id,username,password,real_name,sex,status,grade,class from users where id = #{id}
+	</select>
+	
+	<update id="updateUserById" parameterType="User">
+		update users SET username = #{userName},password = #{password},real_name = #{realName},sex = #{sex},status = #{status},grade = #{grade},class = #{classes} where id = #{id}
+	</update>
+	
+	<delete id="delUserById" parameterType="Integer">
+		delete from users where id = #{id}
+	</delete>
+	
+	<select id="selectUserRoleCountByUsername" parameterType="String" resultType="Integer">
+		SELECT count(role_code) from user_role where username = #{username}
+	</select>
+	
+	<update id="updateUserRoleByUsername">
+		UPDATE user_role SET role_code = #{role} WHERE username = #{username}
+	</update>
+	
+	<insert id="insertUserRole">
+		INSERT INTO user_role (role_code,username) values (#{role},#{username})
+	</insert>
+	
+	<select id="selectRoleCodeByUsername" parameterType="String" resultType="String">
+		SELECT role_code from user_role where username = #{username}
+	</select>
+	
+	<select id="selectUserByUserName" parameterType="String" resultMap="UserMap">
+		select id,username,password,real_name,sex,status,grade,class from users where username = #{username}
+	</select>
+	
+	<select id="selectDicByType" parameterType="String" resultType="Dictionary">
+		SELECT d.value,d.desc from dictionary d where d.type = #{type} ORDER BY d.sort
+	</select>
+	
+	<select id="getRoles" resultMap="RoleMap" >
+		select id,role_code,role_name from role
+	</select>
+</mapper>
